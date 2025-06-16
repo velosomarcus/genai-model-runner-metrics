@@ -1,0 +1,43 @@
+# FastAPI and async web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# OpenAI client
+openai==1.58.1
+
+# Prometheus metrics
+prometheus-client==0.21.1
+prometheus-fastapi-instrumentator==7.0.0
+
+# OpenTelemetry tracing
+opentelemetry-api==1.29.0
+opentelemetry-sdk==1.29.0
+opentelemetry-instrumentation-fastapi==0.50b0
+opentelemetry-exporter-otlp==1.29.0
+opentelemetry-instrumentation-requests==0.50b0
+
+# HTTP client for metrics
+httpx==0.28.1
+
+# Environment and configuration
+python-dotenv==1.0.1
+
+# Structured logging
+structlog==24.4.0
+
+# Data validation
+pydantic==2.10.4
+
+# Type hints
+typing-extensions==4.12.2
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.25.0
+pytest-mock==3.14.0
+
+# Development
+black==24.10.0
+isort==5.13.2
+flake8==7.1.1
+mypy==1.14.0

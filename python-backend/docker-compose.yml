@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Python FastAPI backend
+  python-backend:
+    build:
+      context: ./python-backend
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"  # Main API port (offset to avoid conflict with Go version)
+      - "9091:9090"  # Metrics port (offset to avoid conflict with Go version)
+    environment:
+      - BASE_URL=${BASE_URL:-http://localhost:11434/v1}
+      - MODEL=${MODEL:-llama3.2:1b}
+      - API_KEY=${API_KEY:-ollama}
+      - TRACING_ENABLED=${TRACING_ENABLED:-false}
+      - OTLP_ENDPOINT=${OTLP_ENDPOINT:-jaeger:4318}
+      - PORT=8080
+      - METRICS_PORT=9090
+    volumes:
+      - ./python-backend:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - genai-network
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9092:9090"  # Offset to avoid conflict
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - genai-network
+
+  # Grafana for metrics visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"  # Offset to avoid conflict
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - genai-network
+
+  # Jaeger for distributed tracing (optional)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # HTTP collector
+      - "4318:4318"    # OTLP HTTP receiver
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - genai-network
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  genai-network:
+    driver: bridge
